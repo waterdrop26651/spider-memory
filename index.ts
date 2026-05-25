@@ -19,6 +19,7 @@ import {
   getMostConnected,
   getNodeDegree,
   createGraph,
+  repairGraph,
 } from "./graph.js";
 import { exhale } from "./exhale.js";
 import { loadGraph, saveGraph } from "./storage.js";
@@ -35,6 +36,11 @@ const sessionBuffer: Array<{ role: string; content: string }> = [];
 export default async function spiderMemory(pi: ExtensionAPI) {
   // Load graph on startup
   graph = await loadGraph(GRAPH_PATH);
+  const { removedEdges, removedKeys } = repairGraph(graph);
+  if (removedEdges > 0 || removedKeys > 0) {
+    console.log(`[Spider] Repaired graph: removed ${removedEdges} dangling edges, ${removedKeys} empty keys`);
+    await saveGraph(graph, GRAPH_PATH);
+  }
   const nodeCount = Object.keys(graph.nodes).length;
   const edgeCount = Object.values(graph.edges).reduce((s, e) => s + e.length, 0);
 
@@ -258,14 +264,14 @@ export default async function spiderMemory(pi: ExtensionAPI) {
   // ─── Event: collect messages during conversation ───
 
   pi.on("turn_end", async (event) => {
-    // Buffer assistant messages for exhale
-    if (event.message?.role === "assistant" && event.message?.content) {
+    // Buffer both user and assistant messages for exhale
+    if (event.message?.role === "assistant" || event.message?.role === "user") {
       const text =
         typeof event.message.content === "string"
           ? event.message.content
           : "";
       if (text) {
-        sessionBuffer.push({ role: "assistant", content: text });
+        sessionBuffer.push({ role: event.message.role, content: text });
       }
     }
   });

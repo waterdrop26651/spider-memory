@@ -1,6 +1,6 @@
 /** Spider Memory — comprehensive test suite */
 
-import { createGraph, addNode, addEdge, generateId, findNodeByTopic, walk, getNodeDegree, jaccard, stripPunct, decayEdges, forgetEdges, mergeNodes, getMostConnected, findIslands, touchEdge, archiveColdLayer } from "./graph.js";
+import { createGraph, addNode, addEdge, generateId, findNodeByTopic, walk, getNodeDegree, jaccard, stripPunct, decayEdges, forgetEdges, mergeNodes, getMostConnected, findIslands, touchEdge, archiveColdLayer, repairGraph } from "./graph.js";
 import { extractKeywords, exhale } from "./exhale.js";
 import { saveGraph, loadGraph } from "./storage.js";
 import type { SpiderNode, SpiderEdge, SpiderGraph, SpiderConfig } from "./types.js";
@@ -497,7 +497,57 @@ section("12. Maintenance");
 })();
 
 // ═══════════════════════════════════════════
-// 13. STORAGE ROUNDTRIP
+// 13. REPAIR GRAPH
+// ═══════════════════════════════════════════
+
+section("13. Repair Graph");
+
+(() => {
+  // Repair dangling edges
+  const g = createGraph();
+  addNode(g, makeNode("a", "node a"));
+  // Manually inject a dangling edge (addEdge now prevents this, so we inject directly)
+  g.edges["a"] = [
+    { edgeId: "e1", fromId: "a", toId: "phantom", weight: 1.0, edgeType: "co-occurrence", createdAt: 1000, evidenceRef: "test", isSeed: false },
+  ];
+  g.edges["undefined"] = [
+    { edgeId: "e2", fromId: "undefined", toId: "a", weight: 1.0, edgeType: "co-occurrence", createdAt: 1000, evidenceRef: "test", isSeed: false },
+  ];
+
+  const { removedEdges, removedKeys } = repairGraph(g);
+  // 1 dangling toId: a->phantom
+  // 1 dangling fromId key "undefined" (and its edge is cleaned)
+  assert(removedEdges === 2, `removed ${removedEdges} dangling edges, expected 2`);
+  assert(removedKeys === 2, `removed ${removedKeys} empty/undefined keys, expected 2`); // undefined key + emptied 'a' key
+  assert((g.edges["a"]?.length ?? 0) === 0, `a has no dangling edges, got ${g.edges["a"]?.length}`);
+  assert(!("undefined" in g.edges), "undefined key removed");
+
+  // Repair on clean graph is a no-op
+  const g2 = createGraph();
+  addNode(g2, makeNode("x", "x"));
+  addNode(g2, makeNode("y", "y"));
+  addEdge(g2, makeEdge("x", "y", 1.0));
+  const r2 = repairGraph(g2);
+  assert(r2.removedEdges === 0, `clean graph: 0 dangling edges`);
+  assert(r2.removedKeys === 0, `clean graph: 0 removed keys`);
+})();
+
+(() => {
+  // addEdge now prevents edges to non-existent nodes
+  const g = createGraph();
+  addNode(g, makeNode("a", "a"));
+  const before = Object.keys(g.edges).length;
+  addEdge(g, makeEdge("a", "nonexistent", 1.0));
+  const after = Object.keys(g.edges).length;
+  assert(g.edges["a"] === undefined || g.edges["a"].length === 0, "addEdge skips edge to nonexistent node");
+
+  // Also from nonexistent
+  addEdge(g, makeEdge("ghost", "a", 1.0));
+  assert(!("ghost" in g.edges), "addEdge skips edge from nonexistent node");
+})();
+
+// ═══════════════════════════════════════════
+// 14. STORAGE ROUNDTRIP
 // ═══════════════════════════════════════════
 
 async function testStorage() {

@@ -41,6 +41,9 @@ export function addEdge(graph: SpiderGraph, edge: SpiderEdge): void {
   // Prevent self-loops
   if (edge.fromId === edge.toId) return;
 
+  // Prevent edges to non-existent nodes
+  if (!graph.nodes[edge.fromId] || !graph.nodes[edge.toId]) return;
+
   if (!graph.edges[edge.fromId]) graph.edges[edge.fromId] = [];
 
   // Coalesce duplicate (same from, to, type)
@@ -184,6 +187,35 @@ export function findIslands(graph: SpiderGraph): SpiderNode[] {
   return Object.values(graph.nodes).filter(
     (n) => n.lastWalkedAt === n.createdAt,
   );
+}
+
+/** Remove edges that reference non-existent nodes and clean up empty edge arrays */
+export function repairGraph(graph: SpiderGraph): { removedEdges: number; removedKeys: number } {
+  const nodeIds = new Set(Object.keys(graph.nodes));
+  let removedEdges = 0;
+  const keysToRemove: string[] = [];
+
+  for (const [fromId, edges] of Object.entries(graph.edges)) {
+    // Remove edges from nonexistent nodes
+    if (!nodeIds.has(fromId)) {
+      removedEdges += edges.length;
+      keysToRemove.push(fromId);
+      continue;
+    }
+    // Remove edges to nonexistent nodes
+    const before = edges.length;
+    graph.edges[fromId] = edges.filter((e) => nodeIds.has(e.toId));
+    removedEdges += before - graph.edges[fromId].length;
+    if (graph.edges[fromId].length === 0) {
+      keysToRemove.push(fromId);
+    }
+  }
+
+  for (const key of keysToRemove) {
+    delete graph.edges[key];
+  }
+
+  return { removedEdges, removedKeys: keysToRemove.length };
 }
 
 // ─── BFS Walk ───
