@@ -5,6 +5,18 @@
   "keywords": ["pi-package", "memory", "graph", "spider", "associative-memory"],
   "license": "MIT",
   "author": "Waterdrop",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Waterdrop/spider-memory"
+  },
+  "main": "./index.ts",
+  "files": [
+    "index.ts",
+    "graph.ts",
+    "exhale.ts",
+    "storage.ts",
+    "types.ts"
+  ],
   "pi": {
     "extensions": ["./index.ts"]
   },
