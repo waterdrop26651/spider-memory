@@ -7,15 +7,22 @@
   "author": "Waterdrop",
   "repository": {
     "type": "git",
-    "url": "https://github.com/waterdrop26651/spider-memory"
+    "url": "git+https://github.com/waterdrop26651/spider-memory.git"
+  },
+  "homepage": "https://github.com/waterdrop26651/spider-memory#readme",
+  "bugs": {
+    "url": "https://github.com/waterdrop26651/spider-memory/issues"
   },
   "main": "./index.ts",
+  "types": "./types.ts",
   "files": [
     "index.ts",
     "graph.ts",
     "exhale.ts",
     "storage.ts",
-    "types.ts"
+    "types.ts",
+    "README.md",
+    "LICENSE"
   ],
   "pi": {
     "extensions": ["./index.ts"]
