@@ -1,0 +1,16 @@
+{
+  "name": "spider-memory",
+  "version": "0.1.0",
+  "description": "Graph-based associative memory for Pi — stores conversations as a web of nodes and weighted edges, with automatic post-conversation reflection",
+  "keywords": ["pi-package", "memory", "graph", "spider", "associative-memory"],
+  "license": "MIT",
+  "author": "Waterdrop",
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  }
+}
